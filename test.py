@@ -6,7 +6,7 @@ from math import ceil
 
 if __name__ == "__main__":
     # read info.csv to get the number of the docu which need to be visu
-    read_path = Path(r"C:\Users\TianXue\OneDrive - Voith Group of Companies\MachineToolSignature\data_export")
+    read_path = Path(r"path")
     for csv_file in list(read_path.glob("*.csv")):
 
         info_csv = pd.read_csv(csv_file)
