@@ -7,74 +7,80 @@ from math import ceil
 if __name__ == "__main__":
     # read info.csv to get the number of the docu which need to be visu
     read_path = Path(r"path")
-    for csv_file in list(read_path.glob("*.csv")):
+    csv_files = list(read_path.glob("*.csv"))
 
-        info_csv = pd.read_csv(csv_file)
+    if len(csv_files) != 1:  
+        raise Exception("There should be exactly one CSV file in the directory.")
 
-        n_observations = len(info_csv["filename"])
+    csv_file = csv_files[0] 
+    info_csv = pd.read_csv(csv_file)
 
-        # transform the date to date formate and only have hour and minute
-        date_list = pd.to_datetime(info_csv["date"]).dt.strftime("%Y-%m-%d %H:%M")
+    info_csv = pd.read_csv(csv_file)
 
-        # generate the color list and the number of the color is depend on the number of the docu
-        color_map = plt.get_cmap("plasma", n_observations)
+    n_observations = len(info_csv["filename"])
 
-        color_list = [color_map(i) for i in range(n_observations)]
+    # transform the date to date formate and only have hour and minute
+    date_list = pd.to_datetime(info_csv["date"]).dt.strftime("%Y-%m-%d %H:%M")
 
-        # Open zip first to get the number of the subplots
-        files = list(read_path.glob("*.zip"))
-        if len(files) > 0:
-            df = pd.read_csv(files[0])
-        else:
-            raise Exception("No files found.")
+    # generate the color list and the number of the color is depend on the number of the docu
+    color_map = plt.get_cmap("plasma", n_observations)
 
-        dimensions = [el for el in df.columns if el != "Time"]  # store all the columns name except the time column
-        n_dimensions = len(dimensions)
+    color_list = [color_map(i) for i in range(n_observations)]
 
-        # calculate required number of rows / columns for subplots
-        n_cols = 3
-        n_rows = int(ceil(n_dimensions / n_cols))
-        # extra row to display the legend if all cells in the grid will be used for subplots
-        if n_rows * n_cols == n_dimensions:
-            n_rows += 1
+    # Open zip first to get the number of the subplots
+    files = list(read_path.glob("*.zip"))
+    if len(files) > 0:
+        df = pd.read_csv(files[0])
+    else:
+        raise Exception("No files found.")
 
-        # create figure object
-        fig = plt.figure(figsize=(15, 40))
-        # create axes for relevant dimensions / columns
-        # relevant columns
-        axes_per_dimension = {
-            el: (fig.add_subplot(n_rows, n_cols, i + 1), i) for i, el in enumerate(dimensions)
-        }  # (fig.add_subplot(2, 2, 1), 0)——it will add the first subplot and the index of the subplot is 0
-        # axes_per_dimension is a place for store every subplot
-        for i, (file, color, label) in enumerate(zip(files, color_list, date_list)):
-            # read file
-            df = pd.read_csv(file)
+    dimensions = [el for el in df.columns if el != "Time"]  # store all the columns name except the time column
+    n_dimensions = len(dimensions)
 
-            # transform string-formatted datetime object to datetime object
-            t = pd.to_datetime(df["Time"], format="mixed")
-            # to relative time
-            dt = t - t[0]
+    # calculate required number of rows / columns for subplots
+    n_cols = 3
+    n_rows = int(ceil(n_dimensions / n_cols))
+    # extra row to display the legend if all cells in the grid will be used for subplots
+    if n_rows * n_cols == n_dimensions:
+        n_rows += 1
 
-            for col in df.columns:
-                if col in axes_per_dimension:
-                    ax, idx = axes_per_dimension[col]  # ax is the axis(axes) include the title and the xlabel
-                    # and ax,idx are strored as a list
+    # create figure object
+    fig = plt.figure(figsize=(15, 40))
+    # create axes for relevant dimensions / columns
+    # relevant columns
+    axes_per_dimension = {
+        el: (fig.add_subplot(n_rows, n_cols, i + 1), i) for i, el in enumerate(dimensions)
+    }  # (fig.add_subplot(2, 2, 1), 0)——it will add the first subplot and the index of the subplot is 0
+    # axes_per_dimension is a place for store every subplot
+    for i, (file, color, label) in enumerate(zip(files, color_list, date_list)):
+        # read file
+        df = pd.read_csv(file)
 
-                    ax.plot(dt, df[col], label=label, color=color, alpha=0.5)
-                    ax.tick_params(axis="x", rotation=45)
-                    ax.grid(True)  # to show the gridding
-                    ax.set_title(col)
+        # transform string-formatted datetime object to datetime object
+        t = pd.to_datetime(df["Time"], format="mixed")
+        # to relative time
+        dt = t - t[0]
 
-                    if idx % n_rows == 0:
-                        # this subplot is in the last row
-                        # show axislabel and ticklabel
-                        ax.set_xlabel("time t/s")
-                    else:
-                        ax.set_xticklabels([])
+        for col in df.columns:
+            if col in axes_per_dimension:
+                ax, idx = axes_per_dimension[col]  # ax is the axis(axes) include the title and the xlabel
+                # and ax,idx are strored as a list
 
-        # add one legend for all plots
-        handles, labels = axes_per_dimension[dimensions[0]][0].get_legend_handles_labels()
-        fig.legend(handles, labels, loc="lower right")
+                ax.plot(dt, df[col], label=label, color=color, alpha=0.5)
+                ax.tick_params(axis="x", rotation=45)
+                ax.grid(True)  # to show the gridding
+                ax.set_title(col)
 
-        plt.tight_layout()
-        plt.show()
+                if idx % n_rows == 0:
+                    # this subplot is in the last row
+                    # show axislabel and ticklabel
+                    ax.set_xlabel("time t/s")
+                else:
+                    ax.set_xticklabels([])
+
+    # add one legend for all plots
+    handles, labels = axes_per_dimension[dimensions[0]][0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="lower right")
+
+    plt.tight_layout()
+    plt.show()
